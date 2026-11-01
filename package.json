@@ -1,0 +1,24 @@
+{
+  "name": "com.ilparola.simpletools",
+  "version": "0.1.0",
+  "displayName": "SimpleTools for Unity",
+  "description": "Small, independent Unity modules: game state, JSON settings, localization, audio and input.",
+  "unity": "2021.3",
+  "license": "Unlicense",
+  "documentationUrl": "https://github.com/ilparola/simpletools-unity#readme",
+  "keywords": [
+    "utility",
+    "gamestate",
+    "settings",
+    "localization",
+    "audio",
+    "input"
+  ],
+  "author": {
+    "name": "ilparola",
+    "url": "https://github.com/ilparola"
+  },
+  "dependencies": {
+    "com.unity.inputsystem": "1.0.0"
+  }
+}
