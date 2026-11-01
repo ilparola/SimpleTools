@@ -11,6 +11,8 @@ SimpleTools grows alongside real games: generic pieces written for a game end up
 - **LocalizationManager** - Translations with fallback and TextMeshPro support.
 - **AudioManager** - Music, SFX, mixer routing, pooling, crossfade and 3D emitters.
 - **InputManager & InputRemapper** - Unity Input System wrapper, abstract events and persistent rebinding.
+- **Controllers** - One controller API over several sources (Input System gamepads, Linux SDL joysticks, Steam Input), controller-first device priority, UI Toolkit menu navigation, rumble pulses and button prompt icons.
+- **Steam** (optional) - Steamworks.NET startup and a Steam Input controller source with trackpads. Compiled only when Steamworks.NET is installed.
 
 ## Installation
 
@@ -43,7 +45,11 @@ Runtime/
   InputManager/
   LocalizationManager/
   SettingsManager/
+  Controllers/
+  Steam/                          (SimpleTools.Steam.asmdef, needs Steamworks.NET)
   SimpleTools.Runtime.asmdef
+Editor/
+  Steam/                          (copies steam_appid.txt next to builds)
 ```
 
 ## GameStateManager\<TState\>
@@ -276,6 +282,85 @@ public class InputExample : MonoBehaviour
 
 Rebinding supports timeouts, cancellation with `Escape`, mouse and pointer exclusion, and resetting an individual binding. For a composite binding such as `WASD`, use the index of the individual part (`Up`, `Down`, `Left` or `Right`).
 
+## Controllers
+
+See [Controllers.cs](Runtime/Controllers/Controllers.cs). The game names its buttons with its own ids (usually an enum) and ties them to physical gamepad buttons; every source is read and merged once per frame, before other scripts.
+
+```csharp
+using SimpleTools.Controllers;
+using UnityEngine;
+using UnityEngine.InputSystem.LowLevel;
+
+public enum PadCommand { Jump, Back, Pause }
+
+public static class GameControllers
+{
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void Configure()
+    {
+        Controllers.Configure(new ControllerSetup(3,
+            ((int)PadCommand.Jump, GamepadButton.South),
+            ((int)PadCommand.Back, GamepadButton.East),
+            ((int)PadCommand.Pause, GamepadButton.Start))
+        {
+            Submit = (int)PadCommand.Jump,
+            Cancel = (int)PadCommand.Back
+        });
+        Haptics.IsAllowed = () => true; // hook it to a "Vibration" option
+    }
+}
+
+public class Player : MonoBehaviour
+{
+    private void Update()
+    {
+        if (Controllers.WasPressed((int)PadCommand.Jump))
+        {
+            Haptics.Pulse(0.3f, 0.6f, 0.08f);
+        }
+
+        Vector2 move = Controllers.LeftStick;
+    }
+}
+```
+
+- **Sources**: the Input System gamepad (Windows, macOS); the Linux SDL joystick, which is how the Input System sees many controllers on Linux, including the Steam Deck when Steam emulates an Xbox pad; and any source the game adds with `Controllers.AddSource`, which takes priority (for example Steam Input). Implement `IControllerSource` for new ones.
+- **Device priority** (`ActiveDevice`): while a controller is connected, keyboard and mouse are disabled and the pointer is hidden; they come back when it is unplugged or the game quits. Set `ControllerTakesPriority = false` to keep both. `ActiveDevice.Changed` fires on connect, disconnect and family change, to swap prompts.
+- **Menus**: declare open menus with `Controllers.SetMenuOpen(owner, true)` (a paused game counts too). For sources the Input System UI actions do not see, the focused UI Toolkit element receives navigation, submit and cancel events.
+- **Rumble** (`Haptics.Pulse`): pulses fade out and add up; they play only on a controller and stop while paused.
+- **Icons** (`ControllerIcons.Get("south")`): loaded from `Resources/<Root>/<family folder>/`, for example with the free Kenney Input Prompts.
+- **Diagnostics**: `Controllers.Diagnostics` and `Controllers.HeldSummary`; every change of controller state is also logged.
+
+## Steam
+
+See [SteamService.cs](Runtime/Steam/SteamService.cs) and [SteamInputControllerSource.cs](Runtime/Steam/SteamInputControllerSource.cs). Install [Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET) and the `SimpleTools.Steam` assembly compiles on its own. Put `steam_appid.txt` in the project root while the game has no Steam release; it is copied next to every build.
+
+```csharp
+if (SteamService.Initialize())
+{
+    SteamInputControllerSource steam = SteamInputControllerSource.Create(new SteamInputSetup
+    {
+        ManifestPath = "SteamInput/game_actions.vdf", // in StreamingAssets
+        GameActionSet = "Game",
+        MenuActionSet = "Menu",
+        Buttons = new[]
+        {
+            ((int)PadCommand.Jump, "jump", "confirm"),
+            ((int)PadCommand.Back, (string)null, "back"),
+            ((int)PadCommand.Pause, "pause", "close_pause"),
+        },
+        GameAnalog = new SteamAnalogActions { LeftStick = "move", RightTrackpad = "aim" },
+        MenuAnalog = new SteamAnalogActions { RightStick = "scroll" }
+    });
+    if (steam != null)
+    {
+        Controllers.AddSource(steam);
+    }
+}
+```
+
+Steam Input switches between the two action sets with `Controllers.InMenu`, reports the controller type (Steam Deck, PlayStation, Xbox) and exposes trackpads as mouse-like movement.
+
 ## Event-Driven Integration
 
 The modules do not depend on one another. A system can react to events without knowing the implementation of the module that raised them:
@@ -317,6 +402,7 @@ public class GameAudioHooks : MonoBehaviour
 - Unity `2021.3` or later.
 - Input System (installed automatically) for `InputManager` and `InputRemapper`.
 - TextMeshPro for `LocalizedText`.
+- Steamworks.NET for the optional `Steam` module.
 
 ## License
 

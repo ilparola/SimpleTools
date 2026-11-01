@@ -1,0 +1,31 @@
+{
+  "name": "SimpleTools.Steam",
+  "rootNamespace": "SimpleTools.Steam",
+  "references": [
+    "SimpleTools.Runtime",
+    "com.rlabrecque.steamworks.net"
+  ],
+  "includePlatforms": [
+    "Editor",
+    "LinuxStandalone64",
+    "macOSStandalone",
+    "WindowsStandalone32",
+    "WindowsStandalone64"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [
+    "SIMPLETOOLS_STEAMWORKS"
+  ],
+  "versionDefines": [
+    {
+      "name": "com.rlabrecque.steamworks.net",
+      "expression": "",
+      "define": "SIMPLETOOLS_STEAMWORKS"
+    }
+  ],
+  "noEngineReferences": false
+}
