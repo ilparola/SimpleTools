@@ -37,6 +37,12 @@ namespace SimpleTools.Steam
     // same physical controller, so they get disabled while this source is connected.
     public sealed class SteamInputControllerSource : IControllerSource
     {
+        // After switching action set, Steam keeps reporting the old set for a frame or two, so a button
+        // held across the switch (Start opening and closing the pause) looks released and then pressed
+        // again. Such a button counts again only after it has really been released, which is trusted no
+        // earlier than this many seconds after the switch.
+        private const float SwitchSettleTime = 0.2f;
+
         private sealed class AnalogHandles
         {
             public InputAnalogActionHandle_t leftStick;
@@ -52,6 +58,7 @@ namespace SimpleTools.Steam
         private readonly InputDigitalActionHandle_t[] _gameButtons;
         private readonly InputDigitalActionHandle_t[] _menuButtons;
         private readonly bool[] _held;
+        private readonly bool[] _latched;
         private readonly InputHandle_t[] _controllers = new InputHandle_t[Constants.STEAM_INPUT_MAX_COUNT];
         private readonly AnalogHandles _gameAnalog = new AnalogHandles();
         private readonly AnalogHandles _menuAnalog = new AnalogHandles();
@@ -65,6 +72,8 @@ namespace SimpleTools.Steam
         private int _nextAttempt;
         private bool _inMenu;
         private ESteamInputType _type;
+        private bool _setChosen;
+        private float _switchTime;
 
         private SteamInputControllerSource(SteamInputSetup setup, bool manifestAccepted)
         {
@@ -79,6 +88,7 @@ namespace SimpleTools.Steam
             }
 
             _held = new bool[count];
+            _latched = new bool[count];
         }
 
         public string Name => "Steam Input";
@@ -127,6 +137,16 @@ namespace SimpleTools.Steam
         {
             _controllerCount = SteamInput.GetConnectedControllers(_controllers);
             _active = _controllerCount > 0 ? _controllers[0] : default;
+            if (_setChosen && inMenu != _inMenu)
+            {
+                _switchTime = Time.unscaledTime;
+                for (int id = 0; id < _held.Length; id++)
+                {
+                    _latched[id] |= _held[id];
+                }
+            }
+
+            _setChosen = true;
             _inMenu = inMenu;
             if (!IsConnected)
             {
@@ -156,6 +176,16 @@ namespace SimpleTools.Steam
             {
                 _held[_setup.Buttons[index].id] |= buttons[index].m_InputDigitalActionHandle != 0 &&
                                                    SteamInput.GetDigitalActionData(_active, buttons[index]).bState != 0;
+            }
+
+            bool settled = Time.unscaledTime - _switchTime >= SwitchSettleTime;
+            for (int id = 0; id < _held.Length; id++)
+            {
+                if (_latched[id])
+                {
+                    _latched[id] = _held[id] || !settled;
+                    _held[id] = false;
+                }
             }
 
             AnalogHandles analog = inMenu ? _menuAnalog : _gameAnalog;

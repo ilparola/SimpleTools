@@ -6,7 +6,8 @@ namespace SimpleTools.Controllers
 {
     // Controller rumble made of short pulses. Each pulse fades out linearly; overlapping pulses add up to
     // the motors' maximum. Plays only while the player is on a controller and IsAllowed agrees (hook it to
-    // a "Vibration" option). Motors stop while the game is paused (Time.timeScale = 0).
+    // a "Vibration" option). Motors stop while the game is paused (Time.timeScale = 0), except for pulses
+    // that ask to play anyway, such as a test pulse from an options menu.
     public static class Haptics
     {
         private const int MaxPulses = 8;
@@ -17,7 +18,7 @@ namespace SimpleTools.Controllers
         private static HapticsRunner _runner;
 
         // low = heavy motor (low frequency), high = light motor (high frequency), both from 0 to 1
-        public static void Pulse(float low, float high, float duration)
+        public static void Pulse(float low, float high, float duration, bool evenWhilePaused = false)
         {
             if (!ActiveDevice.IsController || (IsAllowed != null && !IsAllowed()))
             {
@@ -32,7 +33,7 @@ namespace SimpleTools.Controllers
                 _runner = host.AddComponent<HapticsRunner>();
             }
 
-            _runner.Add(low, high, duration);
+            _runner.Add(low, high, duration, evenWhilePaused);
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -51,6 +52,7 @@ namespace SimpleTools.Controllers
                 public float high;
                 public float start;
                 public float duration;
+                public bool evenWhilePaused;
             }
 
             private readonly Entry[] _pulses = new Entry[MaxPulses];
@@ -58,9 +60,12 @@ namespace SimpleTools.Controllers
             private float _sentLow;
             private float _sentHigh;
 
-            public void Add(float low, float high, float duration)
+            public void Add(float low, float high, float duration, bool evenWhilePaused)
             {
-                _pulses[_next] = new Entry { low = low, high = high, start = Time.unscaledTime, duration = duration };
+                _pulses[_next] = new Entry
+                {
+                    low = low, high = high, start = Time.unscaledTime, duration = duration, evenWhilePaused = evenWhilePaused
+                };
                 _next = (_next + 1) % MaxPulses;
             }
 
@@ -68,17 +73,15 @@ namespace SimpleTools.Controllers
             {
                 float low = 0f;
                 float high = 0f;
-                if (Time.timeScale > 0f)
+                bool paused = Time.timeScale <= 0f;
+                float now = Time.unscaledTime;
+                foreach (Entry pulse in _pulses)
                 {
-                    float now = Time.unscaledTime;
-                    foreach (Entry pulse in _pulses)
+                    float left = 1f - (now - pulse.start) / Mathf.Max(pulse.duration, 0.001f);
+                    if (pulse.duration > 0f && left > 0f && (!paused || pulse.evenWhilePaused))
                     {
-                        float left = 1f - (now - pulse.start) / Mathf.Max(pulse.duration, 0.001f);
-                        if (pulse.duration > 0f && left > 0f)
-                        {
-                            low += pulse.low * left;
-                            high += pulse.high * left;
-                        }
+                        low += pulse.low * left;
+                        high += pulse.high * left;
                     }
                 }
 
