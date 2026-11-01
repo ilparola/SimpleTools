@@ -30,6 +30,9 @@ namespace SimpleTools.Steam
         public (int id, string gameAction, string menuAction)[] Buttons { get; set; } = new (int, string, string)[0];
         public SteamAnalogActions GameAnalog { get; set; } = new SteamAnalogActions();
         public SteamAnalogActions MenuAnalog { get; set; } = new SteamAnalogActions();
+        // The Steam Deck and Steam Controller have no rumble motors: Steam emulates rumble with the trackpad
+        // actuators, which buzz and are felt only with the thumbs on the trackpads. False turns it off there.
+        public bool RumbleOnTrackpadControllers { get; set; } = true;
     }
 
     // Controller read through Steam Input. Steam applies the game's actions to any controller (Steam Deck,
@@ -202,7 +205,7 @@ namespace SimpleTools.Steam
 
         public void Vibrate(float low, float high)
         {
-            if (IsConnected)
+            if (IsConnected && (!HasTrackpad || _setup.RumbleOnTrackpadControllers))
             {
                 SteamInput.TriggerVibration(_active, (ushort)(Mathf.Clamp01(low) * ushort.MaxValue),
                     (ushort)(Mathf.Clamp01(high) * ushort.MaxValue));
