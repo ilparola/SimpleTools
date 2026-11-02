@@ -13,6 +13,7 @@ SimpleTools grows alongside real games: generic pieces written for a game end up
 - **InputManager & InputRemapper** - Unity Input System wrapper, abstract events and persistent rebinding.
 - **Controllers** - One controller API over several sources (Input System gamepads, Linux SDL joysticks, Steam Input), controller-first device priority, UI Toolkit menu navigation, rumble pulses and button prompt icons.
 - **Steam** (optional) - Steamworks.NET startup and a Steam Input controller source with trackpads. Compiled only when Steamworks.NET is installed.
+- **UI** - UI Toolkit elements: `RadarChart` (spider chart for stats).
 
 ## Installation
 
@@ -47,6 +48,7 @@ Runtime/
   SettingsManager/
   Controllers/
   Steam/                          (SimpleTools.Steam.asmdef, needs Steamworks.NET)
+  UI/
   SimpleTools.Runtime.asmdef
 Editor/
   Steam/                          (copies steam_appid.txt next to builds)
@@ -360,6 +362,24 @@ if (SteamService.Initialize())
 ```
 
 Steam Input switches between the two action sets with `Controllers.InMenu`, reports the controller type (Steam Deck, PlayStation, Xbox) and exposes trackpads as mouse-like movement.
+
+## UI
+
+`RadarChart` is a UI Toolkit element (`SimpleTools.UI`) that draws a radar ("spider") chart: one axis per value, the first at the top and the others clockwise, values from 0 to 1, grid rings and a filled polygon. Axis labels are child `Label`s with the class `radar-chart__label`, placed just outside the chart.
+
+```xml
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:simple="SimpleTools.UI">
+    <simple:RadarChart name="stats" class="stats-chart"/>
+</ui:UXML>
+```
+
+```csharp
+var chart = root.Q<RadarChart>("stats");
+chart.SetLabels(new[] { "Speed", "Power", "Skill", "Defense", "Luck" });
+chart.SetValues(new[] { 0.8f, 0.6f, 0.9f, 0.4f, 0.5f });
+```
+
+Style it with USS custom properties: `--radar-grid-color`, `--radar-fill-color`, `--radar-line-color`, `--radar-rings` (int), `--radar-line-width` and `--radar-label-space` (pixels reserved around the chart for the labels).
 
 ## Event-Driven Integration
 
