@@ -427,3 +427,10 @@ public class GameAudioHooks : MonoBehaviour
 ## License
 
 Released into the public domain under [The Unlicense](LICENSE): use it, change it and ship it however you like, with no attribution required.
+
+## Replay and Media
+
+- `SimpleTools.Replay.TransformTrack`: recorded poses of an object, with unchanged samples dropped and interpolated sampling.
+- `SimpleTools.Media.GifEncoder` and `GifPalette`: streaming animated GIF writer in plain C#, no dependencies.
+- `SimpleTools.Media.AudioMixdown`: offline mix of timed sounds into a stereo track, and a WAV writer.
+- `SimpleTools.Media.FfmpegVideoEncoder`: pipes raw frames to a separate ffmpeg executable and picks the first H.264 encoder that works on the machine. Ship an LGPL build only. `FfmpegBuildCopy` copies `Strumenti/ffmpeg/<mac|windows|linux>` into each build.
