@@ -12,7 +12,7 @@ SimpleTools grows alongside real games: generic pieces written for a game end up
 - **AudioManager** - Music, SFX, mixer routing, pooling, crossfade and 3D emitters.
 - **InputManager & InputRemapper** - Unity Input System wrapper, abstract events and persistent rebinding.
 - **Controllers** - One controller API over several sources (Input System gamepads, Linux SDL joysticks, Steam Input), controller-first device priority, UI Toolkit menu navigation, rumble pulses and button prompt icons.
-- **Steam** (optional) - Steamworks.NET startup and a Steam Input controller source with trackpads. Compiled only when Steamworks.NET is installed.
+- **Steam** (optional) - Steamworks.NET startup, a Steam Input controller source with trackpads, and the local player's persona name and avatar (`SteamProfile`). Compiled only when Steamworks.NET is installed.
 - **UI** - UI Toolkit elements: `RadarChart` (spider chart for stats).
 
 ## Installation
