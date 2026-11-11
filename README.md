@@ -433,5 +433,6 @@ Released into the public domain under [The Unlicense](LICENSE): use it, change i
 - `SimpleTools.Replay.TransformTrack`: recorded poses of an object, with unchanged samples dropped and interpolated sampling.
 - `SimpleTools.Media.GifEncoder` and `GifPalette`: streaming animated GIF writer in plain C#, no dependencies.
 - `SimpleTools.Media.AudioMixdown`: offline mix of timed sounds into a stereo track, and a WAV writer.
+- `SimpleTools.Media.ImagePicker`: lets the player pick a PNG or JPEG with the system dialog (Editor panel, osascript on macOS, PowerShell on Windows, zenity/kdialog on Linux, the system picker on Android through a headless fragment, `Android/ImagePicker.java`). `ImageTools.SquareThumbnail` turns the bytes into a centred square texture, for avatars.
 - `SimpleTools.Media.PhotoCapture`: renders a camera into a texture at any size (screen space UI excluded) and saves timestamped PNG files in `Pictures/<subfolder>`, falling back to the application data folder.
 - `SimpleTools.Media.FfmpegVideoEncoder`: pipes raw frames to a separate ffmpeg executable and picks the first H.264 encoder that works on the machine. Ship an LGPL build only. `FfmpegBuildCopy` copies `Strumenti/ffmpeg/<mac|windows|linux>` into each build.
