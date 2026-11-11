@@ -12,7 +12,7 @@ namespace SimpleTools.Media
 {
     // Encodes raw frames to MP4 by piping them to a separate ffmpeg executable. Being a separate process it does not
     // link with the game, which keeps the LGPL obligations to shipping the binary, its license and its sources.
-    public sealed class FfmpegVideoEncoder : IDisposable
+    public sealed class FfmpegVideoEncoder : IVideoEncoder
     {
         private const int QueuedFrames = 6;
         private const int ProbeTimeoutMilliseconds = 8000;
@@ -146,6 +146,8 @@ namespace SimpleTools.Media
             _writer = new Thread(WriteFrames) { IsBackground = true, Name = "FfmpegVideoEncoder" };
             _writer.Start();
         }
+
+        public bool FinishesOffMainThread => true;
 
         // A frame buffer to fill and pass to WriteFrame: reusing them spares a large allocation per frame
         public byte[] RentFrame(int length)
