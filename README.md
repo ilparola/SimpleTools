@@ -162,6 +162,8 @@ See [LocalizationTable.cs](Runtime/LocalizationManager/LocalizationTable.cs), [L
 3. Add `LocalizationManager` to a GameObject and assign the table.
 4. Add `LocalizedText` to a `TMP_Text` component and set its key.
 
+To browse and edit a table, open `Tools > Simple Tools > Localization Table Editor` (or the button in the table's inspector): one row per key and one column per language, with missing translations highlighted, search on keys and texts, an "Only missing" filter, and a panel to edit the selected key's texts, rename or delete it. New keys and languages are added from the bottom bar; a new language is only a column until a translation is written, so the game keeps using the fallback instead of empty texts. Edits support Undo.
+
 ```csharp
 using SimpleTools.Localization;
 using UnityEngine;
