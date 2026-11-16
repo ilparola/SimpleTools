@@ -13,6 +13,7 @@ SimpleTools grows alongside real games: generic pieces written for a game end up
 - **InputManager & InputRemapper** - Unity Input System wrapper, abstract events and persistent rebinding.
 - **Controllers** - One controller API over several sources (Input System gamepads, Linux SDL joysticks, Steam Input), controller-first device priority, UI Toolkit menu navigation, rumble pulses and button prompt icons.
 - **Steam** (optional) - Steamworks.NET startup, a Steam Input controller source with trackpads, and the local player's persona name and avatar (`SteamProfile`). Compiled only when Steamworks.NET is installed.
+- **Achievements** - One achievement API for every platform: unlocks saved locally and sent to each registered backend (Steam included; Google Play Games, Game Center, PlayStation, Xbox plug in the same way), with per-platform ids, tiers (bronze, silver, gold, platinum) and hidden achievements.
 - **UI** - UI Toolkit elements: `RadarChart` (spider chart for stats).
 
 ## Installation
@@ -41,6 +42,7 @@ The package declares `com.unity.inputsystem` automatically. TextMeshPro is requi
 
 ```text
 Runtime/
+  Achievements/
   AudioManager/
   GameStateManager/
   InputManager/
@@ -334,6 +336,32 @@ public class Player : MonoBehaviour
 - **Rumble** (`Haptics.Pulse`): pulses fade out and add up; they play only on a controller and stop while paused.
 - **Icons** (`ControllerIcons.Get("south")`): loaded from `Resources/<Root>/<family folder>/`, for example with the free Kenney Input Prompts.
 - **Diagnostics**: `Controllers.Diagnostics` and `Controllers.HeldSummary`; every change of controller state is also logged.
+
+## Achievements
+
+See [AchievementManager.cs](Runtime/Achievements/AchievementManager.cs). The game unlocks achievements by its own ids; they are saved in `achievements.json` (persistent data folder), so they exist without any platform and the game can list them. Each platform is an `IAchievementBackend` registered with an optional id translation, because platforms name the same achievement differently (Steam: a name you choose; Google Play: generated ids such as `CgkI...`; Game Center: reverse-DNS ids; PlayStation: trophy numbers).
+
+```csharp
+AchievementManager.AddBackend(new SteamAchievements());                       // same ids as the game
+AchievementManager.AddBackend(new MyGooglePlayBackend(), id => googleIds[id]); // translated ids
+AchievementManager.Unlocked += id => ShowToast(id);
+
+if (AchievementManager.Unlock("CHALLENGE_05")) { /* first time */ }
+bool done = AchievementManager.IsUnlocked("CHALLENGE_05");
+AchievementManager.Sync(); // e.g. at startup: sends local unlocks a backend may have missed
+```
+
+Tiers and secrets: `AchievementManager.Define` takes an `AchievementInfo` per achievement (`AchievementTier` Bronze, Silver, Gold, Platinum, and `Hidden`). PlayStation trophies use the tier directly, Xbox turns it into Gamerscore (`AchievementInfo.DefaultGamerscore`), Steam, Google Play and Game Center have no tiers (only the hidden flag, set in their dashboards). `IsSecret(id)` tells the game's own screen to show a hidden, still locked achievement as "???".
+
+```csharp
+AchievementManager.Define(new[]
+{
+    new AchievementInfo("FIRST_WIN", AchievementTier.Bronze),
+    new AchievementInfo("SECRET_SHOT", AchievementTier.Gold, hidden: true),
+});
+```
+
+A backend's `Unlock` may be called again for an achievement the platform already has (Sync does it), so it must be idempotent. `SteamAchievements` (SimpleTools.Steam) calls `SetAchievement` and `StoreStats`; the ids must exist in the app's Steamworks settings (Stats & Achievements). Not yet: progress (incremental) achievements and reading unlocks back from a platform.
 
 ## Steam
 
